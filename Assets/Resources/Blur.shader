@@ -7,7 +7,7 @@
 	#pragma fragment frag
 	#include "UnityCG.cginc"
 
-	float2 _BlurSize;
+	fixed2 _BlurSize;
 	sampler2D _MainTex;
 	ENDCG
 
@@ -16,8 +16,8 @@
 
 		Pass { //Horizontal
 			CGPROGRAM
-			half4 frag (v2f_img IN) : SV_Target {
-				half4 s = tex2D(_MainTex, IN.uv) * 0.38774;
+			fixed4 frag (v2f_img IN) : SV_Target {
+				fixed4 s = tex2D(_MainTex, IN.uv) * 0.38774;
 				fixed2 cordOffset = fixed2(_BlurSize.x, 0);
 				s += tex2D(_MainTex, IN.uv + cordOffset * 2) * 0.06136;
 				s += tex2D(_MainTex, IN.uv + cordOffset) * 0.24477;
@@ -30,8 +30,8 @@
 		}
 		Pass { //Vertical
 			CGPROGRAM
-			half4 frag (v2f_img IN) : SV_Target {
-				half4 s = tex2D(_MainTex, IN.uv) * 0.38774;
+			fixed4 frag (v2f_img IN) : SV_Target {
+				fixed4 s = tex2D(_MainTex, IN.uv) * 0.38774;
 				fixed2 cordOffset = fixed2(0, _BlurSize.y);
 				s += tex2D(_MainTex, IN.uv + cordOffset * 2) * 0.06136;
 				s += tex2D(_MainTex, IN.uv + cordOffset) * 0.24477;

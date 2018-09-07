@@ -1,5 +1,6 @@
 ﻿Shader "Hidden/GlowShader" {
 	SubShader {
+		Cull Off ZWrite Off ZTest Always
 		Tags { "RenderType"="Opaque" }
 		LOD 100
 

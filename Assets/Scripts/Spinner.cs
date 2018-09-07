@@ -1,12 +1,10 @@
 ﻿using UnityEngine;
-using System.Collections;
 
-public class Spinner : MonoBehaviour
-{
+public class Spinner : MonoBehaviour {
+	
 	public Vector3 EulersPerSecond;
 
-	void Update()
-	{
+	void Update(){
 		transform.Rotate(EulersPerSecond * Time.deltaTime);
     }
 }
