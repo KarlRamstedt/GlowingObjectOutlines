@@ -551,7 +551,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GlowColor: {r: 0.08627451, g: 1, b: 0.08627451, a: 1}
-  LerpFactor: 9
 --- !u!135 &786901230
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -943,7 +942,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GlowColor: {r: 0, g: 0.25882354, b: 1, a: 1}
-  LerpFactor: 9
 --- !u!1 &1217449025
 GameObject:
   m_ObjectHideFlags: 0
@@ -1395,7 +1393,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GlowColor: {r: 1, g: 0.08627451, b: 0.08627451, a: 1}
-  LerpFactor: 9
 --- !u!1 &1703177120
 GameObject:
   m_ObjectHideFlags: 0

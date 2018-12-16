@@ -23,7 +23,7 @@
 	      			IN.uv.y = 1 - IN.uv.y; //Unnecessary? if (_MainTex_TexelSize.y < 0)
 				#endif
 
-				float4 glow = max(0, tex2D(_GlowBlurredTex, IN.uv) - tex2D(_GlowPrePassTex, IN.uv)); //Could be fixed, but using Float to avoid conversion
+				float4 glow = max(0, tex2D(_GlowBlurredTex, IN.uv) - tex2D(_GlowPrePassTex, IN.uv));
 				return col + glow * _Intensity;
 			}
 			ENDCG

@@ -4,27 +4,32 @@ using UnityEngine.Rendering;
 
 /// <summary>
 /// Creates and maintains a command buffer for the glow effect.
+/// Lerp version fades the color in and out for a smoother look,
+/// at the cost of requiring a list search when registering and
+/// deregistering and a rebuild every frame the fade is happening.
+/// In short: more CPU operations.
 /// </summary>
-public class GlowController : MonoBehaviour {
+public sealed class GlowControllerLerp : MonoBehaviour {
 
 	public float GlowIntensity { set { compositeShader.SetFloat(intensityID, value); } }
 	[Tooltip("Start value only. Cannot be changed in editor during runtime, but change through public setter works during runtime.")] //Pasting void Update(){GlowIntensity = glowIntensity;} somewhere in this class will allow testing the value easier, just remove it after for performance
 	[SerializeField][Range(0f, 10f)] float glowIntensity = 4f;
 
 	CommandBuffer glowBuff;
-	List<GlowObject> glowingObjects = new List<GlowObject>();
+	List<GlowObjectLerp> glowingObjects = new List<GlowObjectLerp>();
 	Material glowShader, blurShader, compositeShader;
 	Vector2 blurTexelSize;
 
 	int prePassRTID, blurPassRTID, tempRTID; //Temporary Rendertexture IDs
 	int blurSizeID, glowColID, intensityID; //Shader property IDs
+	int lastRebuildFrame;
 
 #region Singleton
-	static protected GlowController instance;
-	public static GlowController Inst {
+	private static GlowControllerLerp instance;
+	public static GlowControllerLerp Inst {
 		get {
 			if (instance == null){ //Lazy-load object or create it in case somebody forgot to add it to the scene
-				Camera.main.gameObject.AddComponent<GlowController>(); //AddComponent runs awake function before continuing
+				Camera.main.gameObject.AddComponent<GlowControllerLerp>(); //AddComponent runs awake function before continuing
 			}
 			return instance;
 		}
@@ -57,14 +62,14 @@ public class GlowController : MonoBehaviour {
 	/// <summary>
 	/// Add object to list of glowing objects to be rendered.
 	/// </summary>
-	public void RegisterObject(GlowObject _glowObj){
-		glowingObjects.Add(_glowObj);
-		RebuildCommandBuffer();
+	public void RegisterObject(GlowObjectLerp _glowObj){
+		if (!glowingObjects.Contains(_glowObj)) //Inefficient list search, could probably optimize to be prevented at an object-level. My attempt checked script enabled status on object before running this method, but resulted in weird activation bugs
+			glowingObjects.Add(_glowObj);
 	}
 	/// <summary>
 	/// Remove object from list of glowing objects to be rendered. Updates (rebuilds) buffer.
 	/// </summary>
-	public void DeRegisterObject(GlowObject _glowObj){
+	public void DeRegisterObject(GlowObjectLerp _glowObj){
 		glowingObjects.Remove(_glowObj);
 		if (glowingObjects.Count < 1) //Clearing for (almost)zero overhead when there's no active glow
 			glowBuff.Clear();
@@ -74,16 +79,22 @@ public class GlowController : MonoBehaviour {
 
 	/// <summary>
 	/// Adds commands to the command buffer (commands execute in order).
-	/// Only needs to rebuild when objects are added or removed.
+	/// Only needs to rebuild on color change.
 	/// </summary>
-	void RebuildCommandBuffer(){
+	public void RebuildCommandBuffer(){
+		int frameCount = Time.frameCount; //Simple optimization to only rebuild once per frame for when several objects are updating color at the same time.
+		if (lastRebuildFrame == frameCount)
+			return;
+		else
+			lastRebuildFrame = frameCount;
+		
 		glowBuff.Clear();
 		//Set shader color and render only the objects that should glow to a TRT (TemporaryRenderTexture)
 		glowBuff.GetTemporaryRT(prePassRTID, -1, -1, 0, FilterMode.Bilinear, RenderTextureFormat.Default); //-1 height/width = screen height/width.
 		glowBuff.SetRenderTarget(prePassRTID);
 		glowBuff.ClearRenderTarget(true, true, Color.clear);
 		for (int i = 0, len = glowingObjects.Count; i < len; i++){
-			glowBuff.SetGlobalColor(glowColID, glowingObjects[i].GlowColor);
+			glowBuff.SetGlobalColor(glowColID, glowingObjects[i].CurrentColor);
 
 			for (int j = 0; j < glowingObjects[i].Renderers.Length; j++)
 				glowBuff.DrawRenderer(glowingObjects[i].Renderers[j], glowShader);
@@ -110,3 +121,19 @@ public class GlowController : MonoBehaviour {
 		glowBuff.ReleaseTemporaryRT(prePassRTID);
 	}
 }
+
+
+//Could possibly be optimized to use DrawMesh and sending in a reference to a MaterialPropertyBlock(with color data)
+//instead of DrawRenderer, which would allow buffer to only rebuild when adding/removing objects from glowObjects list.
+//With the GlowObject scripts updating the color data in their MaterialPropertyBlocks locally.
+//Would probably also require updating a matrix for position, rotation and scale information:
+//	matrix[i] = Matrix4x4.TRS(trans.position, trans.rotation, trans.lossyScale);
+//Where trans is a reference to the respective child transforms (if you want child objects to glow as well, you don't even need to make an array otherwise).
+//And this replacing the current contents of the glowObjects loop:
+//		for (int j = 0; j < glowObjects[i].Meshes.Length; j++){
+//			glowBuff.DrawMesh(glowObjects[i].meshes[j], glowObjects[i].matrix[j], glowShader, 0, 0, glowObjects[i].matPropBlock[j]);
+//		}
+//But having to manually update matrix information like this would probably not help overall performance,
+//so look at it more like an experiment if you're interested in trying it out.
+
+//Optimizing the blur shader is probably the best course of action for further optimization.
