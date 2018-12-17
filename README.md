@@ -7,7 +7,7 @@ Well optimized: <0.01ms when inactive (not glowing), ~0.1ms when active on 4670K
 
 Will make child objects with mesh renderers glow (for ease of use with compound objects).
 
-Supports Deferred and Forward with HDR and/or MSAA. But the effect breaks in Forward Rendering **with MSAA and HDR disabled**. The camera's rendered image isn't stored in BuiltinRenderTextureType.CameraTarget when HDR & MSAA are disabled. I don't know of any way to access it from inside a command buffer, but if you have that specific use-case and are ok with the performance hit you can make it will work by breaking out the composite into OnRenderImage, like so:
+Supports Deferred and Forward with HDR and/or MSAA. But the effect breaks in Forward Rendering **with MSAA and HDR disabled**. The camera's rendered image isn't stored in BuiltinRenderTextureType.CameraTarget when HDR & MSAA are disabled. I don't know of any way to access it from inside a command buffer, but if you have that specific use-case and are ok with the performance hit you can make it work by breaking out the composite into OnRenderImage, like so:
 
 ```cs
 void OnRenderImage(RenderTexture src, RenderTexture dst){
